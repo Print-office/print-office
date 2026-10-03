@@ -314,83 +314,51 @@ Designed & Coding By D K Pal
 const API_URL =
 "https://ykxgnaynbkwtqnwksloh.supabase.co/functions/v1/smooth-api";
 
+const form = document.getElementById("printForm");
+const fileInput = document.getElementById("file");
+const pagesSelect = document.getElementById("pages");
+const customPages = document.getElementById("customPages");
+const button = document.getElementById("uploadButton");
+const statusBox = document.getElementById("status");
 
-const form =
-document.getElementById("printForm");
-
-const fileInput =
-document.getElementById("file");
-
-const pagesSelect =
-document.getElementById("pages");
-
-const customPages =
-document.getElementById("customPages");
-
-const button =
-document.getElementById("uploadButton");
-
-const statusBox =
-document.getElementById("status");
-
-
-
-pagesSelect.addEventListener("change", function() {
+pagesSelect.addEventListener("change", function () {
 
     if (this.value === "custom") {
-
         customPages.style.display = "block";
-
     } else {
-
         customPages.style.display = "none";
-
     }
 
 });
 
-
-
 function showStatus(message, type) {
 
     statusBox.style.display = "block";
-
-    statusBox.className =
-        "status " + type;
-
-    statusBox.innerText =
-        message;
+    statusBox.className = "status " + type;
+    statusBox.innerText = message;
 
 }
-
-
 
 form.addEventListener("submit", async function(event) {
 
     event.preventDefault();
 
-
     const password =
         document.getElementById("password").value.trim();
 
-
     const file =
         fileInput.files[0];
-
 
     const colorMode =
         document.querySelector(
             'input[name="color"]:checked'
         ).value;
 
-
     const printSide =
         document.getElementById("printSide").value;
 
-
     let pages =
         pagesSelect.value;
-
 
     if (pages === "custom") {
 
@@ -408,7 +376,6 @@ form.addEventListener("submit", async function(event) {
         }
     }
 
-
     if (!file) {
 
         showStatus(
@@ -418,7 +385,6 @@ form.addEventListener("submit", async function(event) {
 
         return;
     }
-
 
     if (file.size > 20 * 1024 * 1024) {
 
@@ -430,68 +396,64 @@ form.addEventListener("submit", async function(event) {
         return;
     }
 
-
     button.disabled = true;
-
-    button.innerText =
-        "⏳ Uploading...";
-
+    button.innerText = "⏳ Uploading...";
 
     showStatus(
         "Uploading your file...",
         "info"
     );
 
-
     try {
 
-        const formData =
-            new FormData();
+        const formData = new FormData();
 
+        formData.append("password", password);
+        formData.append("file", file);
+        formData.append("color_mode", colorMode);
+        formData.append("print_side", printSide);
+        formData.append("pages", pages);
 
-        formData.append(
-            "password",
-            password
+        console.log("Sending request to:", API_URL);
+        console.log("File:", file.name);
+        console.log("File type:", file.type);
+        console.log("File size:", file.size);
+
+        const response = await fetch(
+            API_URL,
+            {
+                method: "POST",
+                body: formData,
+                mode: "cors"
+            }
         );
 
+        console.log("HTTP Status:", response.status);
+        console.log("Response OK:", response.ok);
 
-        formData.append(
-            "file",
-            file
+        const responseText =
+            await response.text();
+
+        console.log(
+            "Server Response:",
+            responseText
         );
 
+        let result;
 
-        formData.append(
-            "color_mode",
-            colorMode
-        );
+        try {
 
+            result =
+                JSON.parse(responseText);
 
-        formData.append(
-            "print_side",
-            printSide
-        );
+        } catch {
 
-
-        formData.append(
-            "pages",
-            pages
-        );
-
-
-        const response =
-            await fetch(
-                API_URL,
-                {
-                    method: "POST",
-                    body: formData
-                }
+            throw new Error(
+                "Server returned invalid response: " +
+                responseText
             );
 
-
-        const result =
-            await response.json();
-
+        }
 
         if (!response.ok || !result.success) {
 
@@ -499,36 +461,34 @@ form.addEventListener("submit", async function(event) {
                 result.error ||
                 "Upload failed."
             );
-        }
 
+        }
 
         showStatus(
             "✅ File received successfully! Your print is being processed.",
             "success"
         );
 
-
         form.reset();
 
         customPages.style.display =
             "none";
 
-
     } catch (error) {
 
-        console.error(error);
-
+        console.error(
+            "UPLOAD ERROR:",
+            error
+        );
 
         showStatus(
             "❌ " + error.message,
             "error"
         );
 
-
     } finally {
 
         button.disabled = false;
-
         button.innerText =
             "🚀 Upload & Print";
 
@@ -537,6 +497,5 @@ form.addEventListener("submit", async function(event) {
 });
 
 </script>
-
 </body>
 </html>
