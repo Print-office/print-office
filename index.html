@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -188,7 +189,6 @@ Upload your document and send it for printing
     required
 >
 
-
 <label>📁 Select File</label>
 
 <div class="file-box">
@@ -205,7 +205,6 @@ JPG, PNG or PDF • Maximum 20 MB
 </div>
 
 </div>
-
 
 <label>🖨️ Colour</label>
 
@@ -236,7 +235,6 @@ B&W
 
 </div>
 
-
 <label>📄 Printing Side</label>
 
 <select id="printSide">
@@ -250,7 +248,6 @@ Double Side — Coming Soon
 </option>
 
 </select>
-
 
 <label>📑 PDF Pages</label>
 
@@ -285,34 +282,37 @@ Custom / Range
     style="display:none;margin-top:10px;"
 >
 
-    <!-- NO. OF COPIES -->
-
-<label for="copies">No. of Copies</label>
+<label for="copies">
+📄 No. of Copies
+</label>
 
 <select id="copies">
-    <option value="1">1</option>
-    <option value="2">2</option>
-    <option value="3">3</option>
-    <option value="4">4</option>
-    <option value="5">5</option>
-    <option value="6">6</option>
-    <option value="7">7</option>
-    <option value="8">8</option>
-    <option value="9">9</option>
-    <option value="10">10</option>
+
+<option value="1">1 Copy</option>
+<option value="2">2 Copies</option>
+<option value="3">3 Copies</option>
+<option value="4">4 Copies</option>
+<option value="5">5 Copies</option>
+<option value="6">6 Copies</option>
+<option value="7">7 Copies</option>
+<option value="8">8 Copies</option>
+<option value="9">9 Copies</option>
+<option value="10">10 Copies</option>
+
 </select>
 
-
-<!-- PAGES PER SHEET -->
-
-<label for="pages_per_sheet">Pages per Sheet</label>
+<label for="pages_per_sheet">
+📐 Pages per Sheet
+</label>
 
 <select id="pages_per_sheet">
-    <option value="1">1 Page</option>
-    <option value="2">2 Pages</option>
-    <option value="4">4 Pages</option>
-    <option value="6">6 Pages</option>
-    <option value="9">9 Pages</option>
+
+<option value="1">1 Page per Sheet</option>
+<option value="2">2 Pages per Sheet</option>
+<option value="4">4 Pages per Sheet</option>
+<option value="6">6 Pages per Sheet</option>
+<option value="9">9 Pages per Sheet</option>
+
 </select>
 
 <button
@@ -337,62 +337,109 @@ Designed & Coding By D K Pal
 
 </div>
 
-
 <script>
 
 const API_URL =
 "https://ykxgnaynbkwtqnwksloh.supabase.co/functions/v1/smooth-api";
 
-const form = document.getElementById("printForm");
-const fileInput = document.getElementById("file");
-const pagesSelect = document.getElementById("pages");
-const customPages = document.getElementById("customPages");
-const button = document.getElementById("uploadButton");
-const statusBox = document.getElementById("status");
+const form =
+document.getElementById("printForm");
+
+const fileInput =
+document.getElementById("file");
+
+const pagesSelect =
+document.getElementById("pages");
+
+const customPages =
+document.getElementById("customPages");
+
+const copiesSelect =
+document.getElementById("copies");
+
+const pagesPerSheetSelect =
+document.getElementById("pages_per_sheet");
+
+const button =
+document.getElementById("uploadButton");
+
+const statusBox =
+document.getElementById("status");
+
+
+/* PDF CUSTOM PAGE CONTROL */
 
 pagesSelect.addEventListener("change", function () {
 
     if (this.value === "custom") {
+
         customPages.style.display = "block";
+
     } else {
+
         customPages.style.display = "none";
+
     }
 
 });
 
+
+/* STATUS MESSAGE */
+
 function showStatus(message, type) {
 
     statusBox.style.display = "block";
-    statusBox.className = "status " + type;
-    statusBox.innerText = message;
+
+    statusBox.className =
+        "status " + type;
+
+    statusBox.innerText =
+        message;
 
 }
+
+
+/* SUBMIT */
 
 form.addEventListener("submit", async function(event) {
 
     event.preventDefault();
 
+
+    /* BASIC VALUES */
+
     const password =
-        document.getElementById("password").value.trim();
+        document.getElementById("password")
+        .value
+        .trim();
+
 
     const file =
         fileInput.files[0];
+
 
     const colorMode =
         document.querySelector(
             'input[name="color"]:checked'
         ).value;
 
+
     const printSide =
-        document.getElementById("printSide").value;
+        document.getElementById("printSide")
+        .value;
+
+
+    /* PDF PAGES */
 
     let pages =
         pagesSelect.value;
+
 
     if (pages === "custom") {
 
         pages =
             customPages.value.trim();
+
 
         if (!pages) {
 
@@ -402,8 +449,37 @@ form.addEventListener("submit", async function(event) {
             );
 
             return;
+
         }
+
     }
+
+
+    /* COPIES */
+
+    const copies =
+        Number(copiesSelect.value);
+
+
+    /* PAGES PER SHEET */
+
+    const pagesPerSheet =
+        Number(pagesPerSheetSelect.value);
+
+
+    console.log(
+        "COPIES:",
+        copies
+    );
+
+
+    console.log(
+        "PAGES PER SHEET:",
+        pagesPerSheet
+    );
+
+
+    /* FILE CHECK */
 
     if (!file) {
 
@@ -413,9 +489,14 @@ form.addEventListener("submit", async function(event) {
         );
 
         return;
+
     }
 
-    if (file.size > 20 * 1024 * 1024) {
+
+    if (
+        file.size >
+        20 * 1024 * 1024
+    ) {
 
         showStatus(
             "File size must be less than 20 MB.",
@@ -423,57 +504,155 @@ form.addEventListener("submit", async function(event) {
         );
 
         return;
+
     }
 
+
+    /* BUTTON */
+
     button.disabled = true;
-    button.innerText = "⏳ Uploading...";
+
+    button.innerText =
+        "⏳ Uploading...";
+
 
     showStatus(
         "Uploading your file...",
         "info"
     );
 
+
     try {
 
-        const formData = new FormData();
+        const formData =
+            new FormData();
 
-        formData.append("password", password);
-        formData.append("file", file);
-        formData.append("color_mode", colorMode);
-        formData.append("print_side", printSide);
-        formData.append("pages", pages);
 
-        console.log("Sending request to:", API_URL);
-        console.log("File:", file.name);
-        console.log("File type:", file.type);
-        console.log("File size:", file.size);
-
-        const response = await fetch(
-            API_URL,
-            {
-                method: "POST",
-                body: formData,
-                mode: "cors"
-            }
+        formData.append(
+            "password",
+            password
         );
 
-        console.log("HTTP Status:", response.status);
-        console.log("Response OK:", response.ok);
+
+        formData.append(
+            "file",
+            file
+        );
+
+
+        formData.append(
+            "color_mode",
+            colorMode
+        );
+
+
+        formData.append(
+            "print_side",
+            printSide
+        );
+
+
+        formData.append(
+            "pages",
+            pages
+        );
+
+
+        /* IMPORTANT */
+
+        formData.append(
+            "copies",
+            String(copies)
+        );
+
+
+        formData.append(
+            "pages_per_sheet",
+            String(pagesPerSheet)
+        );
+
+
+        console.log(
+            "=============================="
+        );
+
+        console.log(
+            "PRINT REQUEST"
+        );
+
+        console.log(
+            "File:",
+            file.name
+        );
+
+        console.log(
+            "Copies:",
+            copies
+        );
+
+        console.log(
+            "Pages per Sheet:",
+            pagesPerSheet
+        );
+
+        console.log(
+            "PDF Pages:",
+            pages
+        );
+
+        console.log(
+            "Colour:",
+            colorMode
+        );
+
+        console.log(
+            "Side:",
+            printSide
+        );
+
+        console.log(
+            "=============================="
+        );
+
+
+        /* SEND TO SUPABASE */
+
+        const response =
+            await fetch(
+                API_URL,
+                {
+                    method: "POST",
+                    body: formData,
+                    mode: "cors"
+                }
+            );
+
+
+        console.log(
+            "HTTP Status:",
+            response.status
+        );
+
 
         const responseText =
             await response.text();
+
 
         console.log(
             "Server Response:",
             responseText
         );
 
+
         let result;
+
 
         try {
 
             result =
-                JSON.parse(responseText);
+                JSON.parse(
+                    responseText
+                );
 
         } catch {
 
@@ -484,7 +663,11 @@ form.addEventListener("submit", async function(event) {
 
         }
 
-        if (!response.ok || !result.success) {
+
+        if (
+            !response.ok ||
+            !result.success
+        ) {
 
             throw new Error(
                 result.error ||
@@ -493,15 +676,33 @@ form.addEventListener("submit", async function(event) {
 
         }
 
+
+        /* SUCCESS */
+
+        console.log(
+            "SERVER COPIES:",
+            result.copies
+        );
+
+        console.log(
+            "SERVER PAGES PER SHEET:",
+            result.pages_per_sheet
+        );
+
+
         showStatus(
             "✅ File received successfully! Your print is being processed.",
             "success"
         );
 
+
+        /* RESET FORM */
+
         form.reset();
 
         customPages.style.display =
             "none";
+
 
     } catch (error) {
 
@@ -510,14 +711,17 @@ form.addEventListener("submit", async function(event) {
             error
         );
 
+
         showStatus(
             "❌ " + error.message,
             "error"
         );
 
+
     } finally {
 
         button.disabled = false;
+
         button.innerText =
             "🚀 Upload & Print";
 
@@ -526,5 +730,7 @@ form.addEventListener("submit", async function(event) {
 });
 
 </script>
+
 </body>
 </html>
+```
