@@ -1,13 +1,27 @@
-```html
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>QR Print Service</title>
 
+<!-- PDF.JS -->
+
+<script type="module">
+import * as pdfjsLib from
+"https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/legacy/build/pdf.mjs";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+"https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/legacy/build/pdf.worker.mjs";
+
+window.pdfjsLib = pdfjsLib;
+</script>
+
 <style>
+
 * {
     box-sizing: border-box;
 }
@@ -21,7 +35,7 @@ body {
 }
 
 .container {
-    max-width: 500px;
+    max-width: 650px;
     margin: auto;
 }
 
@@ -100,6 +114,11 @@ select:focus {
     text-align: center;
 }
 
+.option label {
+    margin: 0;
+    cursor: pointer;
+}
+
 .option input {
     width: auto;
 }
@@ -120,6 +139,175 @@ button {
 button:disabled {
     background: #9ca3af;
     cursor: not-allowed;
+}
+
+.secondary-button {
+    margin-top: 10px;
+    padding: 11px;
+    font-size: 14px;
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.preview-section {
+    display: none;
+    margin-top: 20px;
+    border: 1px solid #d1d5db;
+    border-radius: 15px;
+    padding: 14px;
+    background: #f9fafb;
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.preview-title {
+    font-weight: bold;
+    color: #111827;
+}
+
+.preview-count {
+    font-size: 13px;
+    color: #4f46e5;
+    font-weight: bold;
+}
+
+.preview-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.preview-controls button {
+    margin: 0;
+    padding: 9px;
+    font-size: 13px;
+    background: #eef2ff;
+    color: #4338ca;
+}
+
+.thumbnail-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-height: 520px;
+    overflow-y: auto;
+    padding: 3px;
+}
+
+.thumbnail {
+    position: relative;
+    background: white;
+    border: 2px solid #d1d5db;
+    border-radius: 10px;
+    padding: 6px;
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.thumbnail:hover {
+    border-color: #6366f1;
+    transform: translateY(-1px);
+}
+
+.thumbnail.selected {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79,70,229,0.15);
+}
+
+.thumbnail canvas {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 5px;
+    background: white;
+}
+
+.page-number {
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+    color: #374151;
+    margin-top: 5px;
+}
+
+.page-check {
+    position: absolute;
+    top: 7px;
+    left: 7px;
+    width: 21px !important;
+    height: 21px;
+    margin: 0;
+    accent-color: #4f46e5;
+}
+
+.image-preview {
+    display: none;
+    margin-top: 15px;
+    text-align: center;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 450px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    background: white;
+}
+
+.preview-note {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 8px;
+    text-align: center;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 9999;
+    padding: 20px;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    position: relative;
+    max-width: 95vw;
+    max-height: 95vh;
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.modal canvas {
+    max-width: 90vw;
+    max-height: 85vh;
+    width: auto;
+    height: auto;
+    display: block;
+}
+
+.modal-close {
+    position: absolute;
+    right: -8px;
+    top: -8px;
+    width: 35px;
+    height: 35px;
+    padding: 0;
+    margin: 0;
+    border-radius: 50%;
+    background: #ef4444;
+    color: white;
+    font-size: 20px;
+    z-index: 2;
 }
 
 .status {
@@ -161,7 +349,32 @@ button:disabled {
     color: #6b7280;
     margin-top: 6px;
 }
+
+.loading-preview {
+    text-align: center;
+    padding: 20px;
+    color: #4f46e5;
+    font-weight: bold;
+}
+
+@media (max-width: 500px) {
+
+    body {
+        padding: 10px;
+    }
+
+    .card {
+        padding: 18px;
+    }
+
+    .thumbnail-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+}
+
 </style>
+
 </head>
 
 <body>
@@ -180,24 +393,30 @@ Upload your document and send it for printing
 
 <form id="printForm">
 
+<!-- PASSWORD -->
+
 <label>🔐 Password</label>
 
 <input
-    type="password"
-    id="password"
-    placeholder="Enter password"
-    required
+type="password"
+id="password"
+placeholder="Enter password"
+required
+
 >
+
+<!-- FILE -->
 
 <label>📁 Select File</label>
 
 <div class="file-box">
 
 <input
-    type="file"
-    id="file"
-    accept=".jpg,.jpeg,.png,.pdf"
-    required
+type="file"
+id="file"
+accept=".jpg,.jpeg,.png,.pdf"
+required
+
 >
 
 <div class="note">
@@ -206,34 +425,123 @@ JPG, PNG or PDF • Maximum 20 MB
 
 </div>
 
+<!-- PDF / IMAGE PREVIEW -->
+
+<div
+    id="previewSection"
+    class="preview-section"
+>
+
+<div class="preview-header">
+
+<div class="preview-title">
+👁️ Page Preview
+</div>
+
+<div
+    id="previewCount"
+    class="preview-count"
+>
+0 pages selected
+</div>
+
+</div>
+
+<div
+    id="previewControls"
+    class="preview-controls"
+>
+
+<button
+type="button"
+id="selectAllBtn"
+
+>
+
+☑ Select All </button>
+
+<button
+type="button"
+id="clearAllBtn"
+
+>
+
+☐ Clear All </button>
+
+</div>
+
+<div
+    id="thumbnailGrid"
+    class="thumbnail-grid"
+></div>
+
+<div
+    id="imagePreview"
+    class="image-preview"
+>
+
+<img
+id="imagePreviewImg"
+alt="Image Preview"
+
+>
+
+<div class="preview-note">
+Image preview
+</div>
+
+</div>
+
+<div class="preview-note">
+Click a PDF page to select it. Click the page image to enlarge it.
+</div>
+
+</div>
+
+<!-- COLOUR -->
+
 <label>🖨️ Colour</label>
 
 <div class="option-row">
 
 <div class="option">
+
 <label>
+
 <input
-    type="radio"
-    name="color"
-    value="color"
-    checked
+type="radio"
+name="color"
+value="color"
+checked
+
 >
+
 Colour
+
 </label>
+
 </div>
 
 <div class="option">
+
 <label>
+
 <input
-    type="radio"
-    name="color"
-    value="bw"
+type="radio"
+name="color"
+value="bw"
+
 >
+
 B&W
+
 </label>
+
 </div>
 
 </div>
+
+<!-- PRINT SIDE -->
 
 <label>📄 Printing Side</label>
 
@@ -248,6 +556,8 @@ Double Side — Coming Soon
 </option>
 
 </select>
+
+<!-- PDF PAGES -->
 
 <label>📑 PDF Pages</label>
 
@@ -276,11 +586,14 @@ Custom / Range
 </select>
 
 <input
-    type="text"
-    id="customPages"
-    placeholder="Example: 1,3,5 or 1-5"
-    style="display:none;margin-top:10px;"
+type="text"
+id="customPages"
+placeholder="Example: 1,3,5 or 1-5"
+style="display:none;margin-top:10px;"
+
 >
+
+<!-- COPIES -->
 
 <label for="copies">
 📄 No. of Copies
@@ -301,6 +614,8 @@ Custom / Range
 
 </select>
 
+<!-- PAGES PER SHEET -->
+
 <label for="pages_per_sheet">
 📐 Pages per Sheet
 </label>
@@ -315,14 +630,19 @@ Custom / Range
 
 </select>
 
+<!-- SUBMIT -->
+
 <button
-    type="submit"
-    id="uploadButton"
+type="submit"
+id="uploadButton"
+
 >
-🚀 Upload & Print
-</button>
+
+🚀 Upload & Print </button>
 
 </form>
+
+<!-- STATUS -->
 
 <div
     id="status"
@@ -337,10 +657,35 @@ Designed & Coding By D K Pal
 
 </div>
 
+<!-- FULL PAGE PREVIEW MODAL -->
+
+<div
+    id="previewModal"
+    class="modal"
+>
+
+<div class="modal-content">
+
+<button
+type="button"
+id="modalClose"
+class="modal-close"
+
+>
+
+× </button>
+
+<canvas id="modalCanvas"></canvas>
+
+</div>
+
+</div>
+
 <script>
 
 const API_URL =
 "https://ykxgnaynbkwtqnwksloh.supabase.co/functions/v1/smooth-api";
+
 
 const form =
 document.getElementById("printForm");
@@ -366,25 +711,49 @@ document.getElementById("uploadButton");
 const statusBox =
 document.getElementById("status");
 
+const previewSection =
+document.getElementById("previewSection");
 
-/* PDF CUSTOM PAGE CONTROL */
+const previewCount =
+document.getElementById("previewCount");
 
-pagesSelect.addEventListener("change", function () {
+const thumbnailGrid =
+document.getElementById("thumbnailGrid");
 
-    if (this.value === "custom") {
+const selectAllBtn =
+document.getElementById("selectAllBtn");
 
-        customPages.style.display = "block";
+const clearAllBtn =
+document.getElementById("clearAllBtn");
 
-    } else {
+const imagePreview =
+document.getElementById("imagePreview");
 
-        customPages.style.display = "none";
+const imagePreviewImg =
+document.getElementById("imagePreviewImg");
 
-    }
+const previewModal =
+document.getElementById("previewModal");
 
-});
+const modalCanvas =
+document.getElementById("modalCanvas");
+
+const modalClose =
+document.getElementById("modalClose");
 
 
-/* STATUS MESSAGE */
+let currentPDF = null;
+
+let totalPDFPages = 0;
+
+let selectedPages = new Set();
+
+let currentFileURL = null;
+
+
+/* =========================================
+   STATUS
+========================================= */
 
 function showStatus(message, type) {
 
@@ -399,94 +768,631 @@ function showStatus(message, type) {
 }
 
 
-/* SUBMIT */
+/* =========================================
+   RESET PREVIEW
+========================================= */
 
-form.addEventListener("submit", async function(event) {
+function resetPreview() {
 
-    event.preventDefault();
+    currentPDF = null;
 
+    totalPDFPages = 0;
 
-    /* BASIC VALUES */
+    selectedPages.clear();
 
-    const password =
-        document.getElementById("password")
-        .value
-        .trim();
+    thumbnailGrid.innerHTML = "";
 
+    imagePreview.style.display = "none";
 
-    const file =
-        fileInput.files[0];
+    previewSection.style.display = "none";
 
+    previewCount.innerText =
+        "0 pages selected";
 
-    const colorMode =
-        document.querySelector(
-            'input[name="color"]:checked'
-        ).value;
+    if (currentFileURL) {
 
+        URL.revokeObjectURL(
+            currentFileURL
+        );
 
-    const printSide =
-        document.getElementById("printSide")
-        .value;
+        currentFileURL = null;
 
+    }
 
-    /* PDF PAGES */
-
-    let pages =
-        pagesSelect.value;
+}
 
 
-    if (pages === "custom") {
+/* =========================================
+   UPDATE SELECTED COUNT
+========================================= */
 
-        pages =
-            customPages.value.trim();
+function updateSelectedCount() {
+
+    const count =
+        selectedPages.size;
+
+    previewCount.innerText =
+        count +
+        (count === 1
+            ? " page selected"
+            : " pages selected");
+
+}
 
 
-        if (!pages) {
+/* =========================================
+   UPDATE PDF SELECT
+========================================= */
+
+function updatePageSelectionUI() {
+
+    document
+        .querySelectorAll(".thumbnail")
+        .forEach(card => {
+
+            const page =
+                Number(card.dataset.page);
+
+            const checkbox =
+                card.querySelector(
+                    ".page-check"
+                );
+
+            if (
+                selectedPages.has(page)
+            ) {
+
+                card.classList.add(
+                    "selected"
+                );
+
+                checkbox.checked = true;
+
+            } else {
+
+                card.classList.remove(
+                    "selected"
+                );
+
+                checkbox.checked = false;
+
+            }
+
+        });
+
+    updateSelectedCount();
+
+}
+
+
+/* =========================================
+   RENDER ONE PDF PAGE
+========================================= */
+
+async function renderThumbnail(
+    pageNumber
+) {
+
+    const page =
+        await currentPDF.getPage(
+            pageNumber
+        );
+
+    const viewport =
+        page.getViewport({
+            scale: 0.45
+        });
+
+
+    const card =
+        document.createElement("div");
+
+    card.className =
+        "thumbnail selected";
+
+    card.dataset.page =
+        pageNumber;
+
+
+    const checkbox =
+        document.createElement("input");
+
+    checkbox.type =
+        "checkbox";
+
+    checkbox.className =
+        "page-check";
+
+    checkbox.checked =
+        true;
+
+
+    const canvas =
+        document.createElement("canvas");
+
+    canvas.width =
+        viewport.width;
+
+    canvas.height =
+        viewport.height;
+
+
+    const pageNumberText =
+        document.createElement("div");
+
+    pageNumberText.className =
+        "page-number";
+
+    pageNumberText.innerText =
+        "Page " + pageNumber;
+
+
+    card.appendChild(
+        checkbox
+    );
+
+    card.appendChild(
+        canvas
+    );
+
+    card.appendChild(
+        pageNumberText
+    );
+
+    thumbnailGrid.appendChild(
+        card
+    );
+
+
+    await page.render({
+
+        canvasContext:
+            canvas.getContext("2d"),
+
+        viewport:
+            viewport
+
+    }).promise;
+
+
+    checkbox.addEventListener(
+        "change",
+        function(event) {
+
+            event.stopPropagation();
+
+            if (this.checked) {
+
+                selectedPages.add(
+                    pageNumber
+                );
+
+            } else {
+
+                selectedPages.delete(
+                    pageNumber
+                );
+
+            }
+
+            updateSelectedCount();
+
+            syncPagesField();
+
+        }
+    );
+
+
+    card.addEventListener(
+        "click",
+        function(event) {
+
+            if (
+                event.target === checkbox
+            ) {
+
+                return;
+
+            }
+
+
+            /* Click card toggles selection */
+
+            if (
+                selectedPages.has(
+                    pageNumber
+                )
+            ) {
+
+                selectedPages.delete(
+                    pageNumber
+                );
+
+            } else {
+
+                selectedPages.add(
+                    pageNumber
+                );
+
+            }
+
+
+            updatePageSelectionUI();
+
+            syncPagesField();
+
+        }
+    );
+
+
+    canvas.addEventListener(
+        "dblclick",
+        async function(event) {
+
+            event.stopPropagation();
+
+            await showLargePreview(
+                pageNumber
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================
+   LOAD PDF
+========================================= */
+
+async function loadPDFPreview(file) {
+
+    resetPreview();
+
+    previewSection.style.display =
+        "block";
+
+    thumbnailGrid.innerHTML =
+        '<div class="loading-preview">⏳ Loading PDF preview...</div>';
+
+
+    try {
+
+        const arrayBuffer =
+            await file.arrayBuffer();
+
+
+        currentPDF =
+            await window.pdfjsLib.getDocument({
+                data: arrayBuffer
+            }).promise;
+
+
+        totalPDFPages =
+            currentPDF.numPages;
+
+
+        selectedPages =
+            new Set(
+                Array.from(
+                    { length: totalPDFPages },
+                    (_, index) => index + 1
+                )
+            );
+
+
+        thumbnailGrid.innerHTML = "";
+
+
+        for (
+            let page = 1;
+            page <= totalPDFPages;
+            page++
+        ) {
+
+            await renderThumbnail(
+                page
+            );
+
+        }
+
+
+        updateSelectedCount();
+
+        syncPagesField();
+
+
+    } catch (error) {
+
+        console.error(
+            "PDF PREVIEW ERROR:",
+            error
+        );
+
+        thumbnailGrid.innerHTML =
+            "";
+
+        showStatus(
+            "❌ Could not load PDF preview.",
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================
+   IMAGE PREVIEW
+========================================= */
+
+function loadImagePreview(file) {
+
+    resetPreview();
+
+    previewSection.style.display =
+        "block";
+
+    imagePreview.style.display =
+        "block";
+
+    currentFileURL =
+        URL.createObjectURL(file);
+
+    imagePreviewImg.src =
+        currentFileURL;
+
+    thumbnailGrid.style.display =
+        "none";
+
+    document.getElementById(
+        "previewControls"
+    ).style.display =
+        "none";
+
+    previewCount.innerText =
+        "Image selected";
+
+}
+
+
+/* =========================================
+   FILE SELECT
+========================================= */
+
+fileInput.addEventListener(
+    "change",
+    async function() {
+
+        const file =
+            this.files[0];
+
+
+        if (!file) {
+
+            resetPreview();
+
+            return;
+
+        }
+
+
+        if (
+            file.size >
+            20 * 1024 * 1024
+        ) {
 
             showStatus(
-                "Please enter PDF pages.",
+                "File size must be less than 20 MB.",
                 "error"
             );
 
+            this.value = "";
+
+            resetPreview();
+
             return;
+
+        }
+
+
+        /* Restore PDF controls */
+
+        thumbnailGrid.style.display =
+            "grid";
+
+        document.getElementById(
+            "previewControls"
+        ).style.display =
+            "flex";
+
+
+        if (
+            file.type === "application/pdf" ||
+            file.name
+                .toLowerCase()
+                .endsWith(".pdf")
+        ) {
+
+            await loadPDFPreview(
+                file
+            );
+
+        } else {
+
+            loadImagePreview(
+                file
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================================
+   SELECT ALL
+========================================= */
+
+selectAllBtn.addEventListener(
+    "click",
+    function() {
+
+        if (!totalPDFPages) {
+
+            return;
+
+        }
+
+
+        selectedPages =
+            new Set(
+                Array.from(
+                    { length: totalPDFPages },
+                    (_, index) => index + 1
+                )
+            );
+
+
+        updatePageSelectionUI();
+
+        syncPagesField();
+
+    }
+);
+
+
+/* =========================================
+   CLEAR ALL
+========================================= */
+
+clearAllBtn.addEventListener(
+    "click",
+    function() {
+
+        if (!totalPDFPages) {
+
+            return;
+
+        }
+
+
+        selectedPages.clear();
+
+        updatePageSelectionUI();
+
+        syncPagesField();
+
+    }
+);
+
+
+/* =========================================
+   CREATE PAGE STRING
+========================================= */
+
+function pagesToString(
+    pagesArray
+) {
+
+    if (!pagesArray.length) {
+
+        return "";
+
+    }
+
+
+    const pages =
+        [...pagesArray]
+            .sort(
+                (a, b) => a - b
+            );
+
+
+    const ranges = [];
+
+    let start =
+        pages[0];
+
+    let previous =
+        pages[0];
+
+
+    for (
+        let i = 1;
+        i < pages.length;
+        i++
+    ) {
+
+        const current =
+            pages[i];
+
+
+        if (
+            current === previous + 1
+        ) {
+
+            previous =
+                current;
+
+        } else {
+
+            if (
+                start === previous
+            ) {
+
+                ranges.push(
+                    String(start)
+                );
+
+            } else {
+
+                ranges.push(
+                    start + "-" + previous
+                );
+
+            }
+
+            start =
+                current;
+
+            previous =
+                current;
 
         }
 
     }
 
 
-    /* COPIES */
+    if (
+        start === previous
+    ) {
 
-    const copies =
-        Number(copiesSelect.value);
-
-
-    /* PAGES PER SHEET */
-
-    const pagesPerSheet =
-        Number(pagesPerSheetSelect.value);
-
-
-    console.log(
-        "COPIES:",
-        copies
-    );
-
-
-    console.log(
-        "PAGES PER SHEET:",
-        pagesPerSheet
-    );
-
-
-    /* FILE CHECK */
-
-    if (!file) {
-
-        showStatus(
-            "Please select a file.",
-            "error"
+        ranges.push(
+            String(start)
         );
+
+    } else {
+
+        ranges.push(
+            start + "-" + previous
+        );
+
+    }
+
+
+    return ranges.join(",");
+
+}
+
+
+/* =========================================
+   SYNC PREVIEW TO PDF PAGES FIELD
+========================================= */
+
+function syncPagesField() {
+
+    if (!totalPDFPages) {
 
         return;
 
@@ -494,243 +1400,853 @@ form.addEventListener("submit", async function(event) {
 
 
     if (
-        file.size >
-        20 * 1024 * 1024
+        selectedPages.size ===
+        totalPDFPages
     ) {
 
-        showStatus(
-            "File size must be less than 20 MB.",
-            "error"
-        );
+        pagesSelect.value =
+            "all";
+
+        customPages.style.display =
+            "none";
 
         return;
 
     }
 
 
-    /* BUTTON */
-
-    button.disabled = true;
-
-    button.innerText =
-        "⏳ Uploading...";
-
-
-    showStatus(
-        "Uploading your file...",
-        "info"
-    );
-
-
-    try {
-
-        const formData =
-            new FormData();
-
-
-        formData.append(
-            "password",
-            password
+    const pageString =
+        pagesToString(
+            [...selectedPages]
         );
 
 
-        formData.append(
-            "file",
-            file
-        );
+    if (
+        pageString === "1"
+    ) {
+
+        pagesSelect.value =
+            "1";
+
+        customPages.style.display =
+            "none";
+
+    } else if (
+        pageString === "1,2"
+    ) {
+
+        pagesSelect.value =
+            "1,2";
+
+        customPages.style.display =
+            "none";
+
+    } else if (
+        pageString === "1,3"
+    ) {
+
+        pagesSelect.value =
+            "1,3";
+
+        customPages.style.display =
+            "none";
+
+    } else {
+
+        pagesSelect.value =
+            "custom";
+
+        customPages.style.display =
+            "block";
+
+        customPages.value =
+            pageString;
+
+    }
+
+}
 
 
-        formData.append(
-            "color_mode",
-            colorMode
-        );
+/* =========================================
+   PDF PAGES DROPDOWN
+========================================= */
 
+pagesSelect.addEventListener(
+    "change",
+    function() {
 
-        formData.append(
-            "print_side",
-            printSide
-        );
+        if (!totalPDFPages) {
 
+            if (
+                this.value === "custom"
+            ) {
 
-        formData.append(
-            "pages",
-            pages
-        );
+                customPages.style.display =
+                    "block";
 
+            } else {
 
-        /* IMPORTANT */
+                customPages.style.display =
+                    "none";
 
-        formData.append(
-            "copies",
-            String(copies)
-        );
+            }
 
-
-        formData.append(
-            "pages_per_sheet",
-            String(pagesPerSheet)
-        );
-
-
-        console.log(
-            "=============================="
-        );
-
-        console.log(
-            "PRINT REQUEST"
-        );
-
-        console.log(
-            "File:",
-            file.name
-        );
-
-        console.log(
-            "Copies:",
-            copies
-        );
-
-        console.log(
-            "Pages per Sheet:",
-            pagesPerSheet
-        );
-
-        console.log(
-            "PDF Pages:",
-            pages
-        );
-
-        console.log(
-            "Colour:",
-            colorMode
-        );
-
-        console.log(
-            "Side:",
-            printSide
-        );
-
-        console.log(
-            "=============================="
-        );
-
-
-        /* SEND TO SUPABASE */
-
-        const response =
-            await fetch(
-                API_URL,
-                {
-                    method: "POST",
-                    body: formData,
-                    mode: "cors"
-                }
-            );
-
-
-        console.log(
-            "HTTP Status:",
-            response.status
-        );
-
-
-        const responseText =
-            await response.text();
-
-
-        console.log(
-            "Server Response:",
-            responseText
-        );
-
-
-        let result;
-
-
-        try {
-
-            result =
-                JSON.parse(
-                    responseText
-                );
-
-        } catch {
-
-            throw new Error(
-                "Server returned invalid response: " +
-                responseText
-            );
+            return;
 
         }
 
 
         if (
-            !response.ok ||
-            !result.success
+            this.value === "all"
         ) {
 
-            throw new Error(
-                result.error ||
-                "Upload failed."
-            );
+            selectedPages =
+                new Set(
+                    Array.from(
+                        {
+                            length:
+                                totalPDFPages
+                        },
+                        (_, index) =>
+                            index + 1
+                    )
+                );
+
+            customPages.style.display =
+                "none";
 
         }
 
 
-        /* SUCCESS */
+        else if (
+            this.value === "1"
+        ) {
 
-        console.log(
-            "SERVER COPIES:",
-            result.copies
-        );
+            selectedPages =
+                new Set([1]);
 
-        console.log(
-            "SERVER PAGES PER SHEET:",
-            result.pages_per_sheet
-        );
+            customPages.style.display =
+                "none";
 
-
-        showStatus(
-            "✅ File received successfully! Your print is being processed.",
-            "success"
-        );
+        }
 
 
-        /* RESET FORM */
+        else if (
+            this.value === "1,2"
+        ) {
 
-        form.reset();
+            selectedPages =
+                new Set(
+                    [1, 2].filter(
+                        page =>
+                            page <=
+                            totalPDFPages
+                    )
+                );
 
-        customPages.style.display =
-            "none";
+            customPages.style.display =
+                "none";
+
+        }
+
+
+        else if (
+            this.value === "1,3"
+        ) {
+
+            selectedPages =
+                new Set(
+                    [1, 3].filter(
+                        page =>
+                            page <=
+                            totalPDFPages
+                    )
+                );
+
+            customPages.style.display =
+                "none";
+
+        }
+
+
+        else if (
+            this.value === "custom"
+        ) {
+
+            customPages.style.display =
+                "block";
+
+            if (
+                customPages.value
+            ) {
+
+                parseCustomPages();
+
+            }
+
+        }
+
+
+        updatePageSelectionUI();
+
+    }
+);
+
+
+/* =========================================
+   CUSTOM PAGE INPUT
+========================================= */
+
+customPages.addEventListener(
+    "input",
+    function() {
+
+        if (
+            pagesSelect.value !==
+            "custom"
+        ) {
+
+            return;
+
+        }
+
+        parseCustomPages();
+
+    }
+);
+
+
+/* =========================================
+   PARSE CUSTOM PAGES
+========================================= */
+
+function parseCustomPages() {
+
+    if (!totalPDFPages) {
+
+        return;
+
+    }
+
+
+    const text =
+        customPages.value.trim();
+
+
+    if (!text) {
+
+        selectedPages.clear();
+
+        updatePageSelectionUI();
+
+        return;
+
+    }
+
+
+    const newPages =
+        new Set();
+
+
+    const parts =
+        text
+            .split(",")
+            .map(
+                item =>
+                    item.trim()
+            )
+            .filter(Boolean);
+
+
+    for (
+        const part of parts
+    ) {
+
+        if (
+            part.includes("-")
+        ) {
+
+            const range =
+                part
+                    .split("-")
+                    .map(
+                        Number
+                    );
+
+
+            if (
+                range.length !== 2 ||
+                !Number.isInteger(
+                    range[0]
+                ) ||
+                !Number.isInteger(
+                    range[1]
+                )
+            ) {
+
+                continue;
+
+            }
+
+
+            const start =
+                Math.min(
+                    range[0],
+                    range[1]
+                );
+
+            const end =
+                Math.max(
+                    range[0],
+                    range[1]
+                );
+
+
+            for (
+                let page = start;
+                page <= end;
+                page++
+            ) {
+
+                if (
+                    page >= 1 &&
+                    page <= totalPDFPages
+                ) {
+
+                    newPages.add(
+                        page
+                    );
+
+                }
+
+            }
+
+        } else {
+
+            const page =
+                Number(part);
+
+
+            if (
+                Number.isInteger(page) &&
+                page >= 1 &&
+                page <= totalPDFPages
+            ) {
+
+                newPages.add(
+                    page
+                );
+
+            }
+
+        }
+
+    }
+
+
+    selectedPages =
+        newPages;
+
+
+    updatePageSelectionUI();
+
+}
+
+
+/* =========================================
+   LARGE PAGE PREVIEW
+========================================= */
+
+async function showLargePreview(
+    pageNumber
+) {
+
+    if (!currentPDF) {
+
+        return;
+
+    }
+
+
+    try {
+
+        const page =
+            await currentPDF.getPage(
+                pageNumber
+            );
+
+
+        const viewport =
+            page.getViewport({
+                scale: 1.5
+            });
+
+
+        modalCanvas.width =
+            viewport.width;
+
+        modalCanvas.height =
+            viewport.height;
+
+
+        await page.render({
+
+            canvasContext:
+                modalCanvas.getContext(
+                    "2d"
+                ),
+
+            viewport:
+                viewport
+
+        }).promise;
+
+
+        previewModal.style.display =
+            "flex";
 
 
     } catch (error) {
 
         console.error(
-            "UPLOAD ERROR:",
+            "LARGE PREVIEW ERROR:",
             error
         );
 
+    }
+
+}
+
+
+/* =========================================
+   CLOSE MODAL
+========================================= */
+
+modalClose.addEventListener(
+    "click",
+    function() {
+
+        previewModal.style.display =
+            "none";
+
+    }
+);
+
+
+previewModal.addEventListener(
+    "click",
+    function(event) {
+
+        if (
+            event.target ===
+            previewModal
+        ) {
+
+            previewModal.style.display =
+                "none";
+
+        }
+
+    }
+);
+
+
+/* =========================================
+   SUBMIT
+========================================= */
+
+form.addEventListener(
+    "submit",
+    async function(event) {
+
+        event.preventDefault();
+
+
+        const password =
+            document.getElementById(
+                "password"
+            ).value.trim();
+
+
+        const file =
+            fileInput.files[0];
+
+
+        const colorMode =
+            document.querySelector(
+                'input[name="color"]:checked'
+            ).value;
+
+
+        const printSide =
+            document.getElementById(
+                "printSide"
+            ).value;
+
+
+        let pages =
+            pagesSelect.value;
+
+
+        /* =================================
+           PDF PAGE VALIDATION
+        ================================= */
+
+        if (
+            file &&
+            (
+                file.type ===
+                "application/pdf" ||
+                file.name
+                    .toLowerCase()
+                    .endsWith(".pdf")
+            )
+        ) {
+
+            if (
+                selectedPages.size === 0
+            ) {
+
+                showStatus(
+                    "Please select at least one PDF page.",
+                    "error"
+                );
+
+                return;
+
+            }
+
+
+            if (
+                selectedPages.size ===
+                totalPDFPages
+            ) {
+
+                pages =
+                    "all";
+
+            } else {
+
+                pages =
+                    pagesToString(
+                        [...selectedPages]
+                    );
+
+            }
+
+        }
+
+
+        /* =================================
+           CUSTOM PAGE FALLBACK
+        ================================= */
+
+        if (
+            pages === "custom"
+        ) {
+
+            pages =
+                customPages.value.trim();
+
+
+            if (!pages) {
+
+                showStatus(
+                    "Please enter PDF pages.",
+                    "error"
+                );
+
+                return;
+
+            }
+
+        }
+
+
+        /* =================================
+           COPIES
+        ================================= */
+
+        const copies =
+            Number(
+                copiesSelect.value
+            );
+
+
+        /* =================================
+           PAGES PER SHEET
+        ================================= */
+
+        const pagesPerSheet =
+            Number(
+                pagesPerSheetSelect.value
+            );
+
+
+        /* =================================
+           FILE CHECK
+        ================================= */
+
+        if (!file) {
+
+            showStatus(
+                "Please select a file.",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        if (
+            file.size >
+            20 * 1024 * 1024
+        ) {
+
+            showStatus(
+                "File size must be less than 20 MB.",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        /* =================================
+           BUTTON
+        ================================= */
+
+        button.disabled =
+            true;
+
+        button.innerText =
+            "⏳ Uploading...";
+
 
         showStatus(
-            "❌ " + error.message,
-            "error"
+            "Uploading your file...",
+            "info"
         );
 
 
-    } finally {
+        try {
 
-        button.disabled = false;
+            const formData =
+                new FormData();
 
-        button.innerText =
-            "🚀 Upload & Print";
+
+            formData.append(
+                "password",
+                password
+            );
+
+
+            formData.append(
+                "file",
+                file
+            );
+
+
+            formData.append(
+                "color_mode",
+                colorMode
+            );
+
+
+            formData.append(
+                "print_side",
+                printSide
+            );
+
+
+            formData.append(
+                "pages",
+                pages
+            );
+
+
+            formData.append(
+                "copies",
+                String(copies)
+            );
+
+
+            formData.append(
+                "pages_per_sheet",
+                String(pagesPerSheet)
+            );
+
+
+            console.log(
+                "=============================="
+            );
+
+            console.log(
+                "PRINT REQUEST"
+            );
+
+            console.log(
+                "File:",
+                file.name
+            );
+
+            console.log(
+                "Copies:",
+                copies
+            );
+
+            console.log(
+                "Pages per Sheet:",
+                pagesPerSheet
+            );
+
+            console.log(
+                "PDF Pages:",
+                pages
+            );
+
+            console.log(
+                "Colour:",
+                colorMode
+            );
+
+            console.log(
+                "Side:",
+                printSide
+            );
+
+            console.log(
+                "=============================="
+            );
+
+
+            /* =================================
+               SEND TO SUPABASE
+            ================================= */
+
+            const response =
+                await fetch(
+                    API_URL,
+                    {
+                        method: "POST",
+                        body: formData,
+                        mode: "cors"
+                    }
+                );
+
+
+            console.log(
+                "HTTP Status:",
+                response.status
+            );
+
+
+            const responseText =
+                await response.text();
+
+
+            console.log(
+                "Server Response:",
+                responseText
+            );
+
+
+            let result;
+
+
+            try {
+
+                result =
+                    JSON.parse(
+                        responseText
+                    );
+
+            } catch {
+
+                throw new Error(
+                    "Server returned invalid response: " +
+                    responseText
+                );
+
+            }
+
+
+            if (
+                !response.ok ||
+                !result.success
+            ) {
+
+                throw new Error(
+                    result.error ||
+                    "Upload failed."
+                );
+
+            }
+
+
+            /* =================================
+               SUCCESS
+            ================================= */
+
+            console.log(
+                "SERVER COPIES:",
+                result.copies
+            );
+
+            console.log(
+                "SERVER PAGES PER SHEET:",
+                result.pages_per_sheet
+            );
+
+
+            showStatus(
+                "✅ File received successfully! Your print is being processed.",
+                "success"
+            );
+
+
+            /* =================================
+               RESET
+            ================================= */
+
+            form.reset();
+
+            resetPreview();
+
+            customPages.style.display =
+                "none";
+
+
+        } catch (error) {
+
+            console.error(
+                "UPLOAD ERROR:",
+                error
+            );
+
+
+            showStatus(
+                "❌ " + error.message,
+                "error"
+            );
+
+
+        } finally {
+
+            button.disabled =
+                false;
+
+            button.innerText =
+                "🚀 Upload & Print";
+
+        }
 
     }
-
-});
+);
 
 </script>
 
 </body>
 </html>
-```
